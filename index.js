@@ -3,6 +3,7 @@ const { Module } = require('vm');
 const { createSecureServer } = require('http2');
 const path = require('path');
 const mimes = require('mime-types');
+const parse5 = require('parse5');
 
 const readSync = (p) => fs.readFileSync(require.resolve(p));
 
@@ -11,7 +12,8 @@ const server = createSecureServer({
   key: readSync('./localhost-privkey.pem'),
 });
 
-const cache = {};
+const absRe = /^https?:\/\//i;
+const cache = Object.create(null);
 const files = fs.readdirSync('./public');
 for (const file of files) {
   const c = cache[`/${file}`] = {
@@ -19,8 +21,34 @@ for (const file of files) {
     contentType: mimes.contentType(path.extname(file)),
     deps: [],
   };
-  if (c.contentType.includes('application/javascript'))
+  if (c.contentType.includes('application/javascript')) {
     c.deps.push(...new Module(c.source).dependencySpecifiers);
+  } else if (c.contentType.includes('text/html')) {
+    const ast = parse5.parseFragment(c.source);
+    (function walk(obj) {
+      if (!obj.childNodes)
+        return;
+
+      for (const node of obj.childNodes) {
+        switch (node.nodeName) {
+          case 'script':
+          case 'img': {
+            const src = node.attrs.find((a) => a.name === 'src');
+            if (src && src.value && !absRe.test(src.value))
+              c.deps.push(src.value);
+            break;
+          }
+          case 'link': {
+            const link = node.attrs.find((a) => a.name === 'link');
+            if (link && link.value && !absRe.test(link.value))
+              c.deps.find(link.value);
+            break;
+          }
+        }
+        walk(node);
+      }
+    }(ast));
+  }
 }
 
 server.on('stream', (stream, headers) => {
@@ -29,13 +57,12 @@ server.on('stream', (stream, headers) => {
 
   console.log(METHOD, PATH);
 
-  if (PATH === '/') {
-    push('/main.js');
+  if (PATH === '/')
     PATH = '/index.html';
-  }
 
   if (PATH in cache) {
     const hit = cache[PATH];
+    hit.deps.map(push);
     stream.respond({ ':status': 200, 'Content-Type': hit.contentType });
     stream.end(hit.source);
   } else {

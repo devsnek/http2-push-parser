@@ -1,0 +1,20 @@
+{
+  "name": "http2-push-esm",
+  "version": "1.0.0",
+  "description": "experiments with http2 push and esm, see index.js",
+  "main": "index.js",
+  "dependencies": {
+    "mime-types": "^2.1.17",
+    "parse5": "^4.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devsnek/http2-push-esm.git"
+  },
+  "author": "snek",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/devsnek/http2-push-esm/issues"
+  },
+  "homepage": "https://github.com/devsnek/http2-push-esm#readme"
+}
