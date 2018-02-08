@@ -1,1 +1,1 @@
-experiments with http2 push and esm, see index.js
+experiments with http2 push and various parsing methods, see index.js

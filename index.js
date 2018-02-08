@@ -71,7 +71,7 @@ server.on('stream', (stream, headers) => {
   }
 
   function push(p) {
-    if (!(p in cache))
+    if (!stream.pushAllowed || !(p in cache))
       return;
     console.log('PUSH', p);
     const hit = cache[p];
