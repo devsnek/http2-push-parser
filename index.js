@@ -1,9 +1,13 @@
+'use strict';
+
 const fs = require('fs');
 const { Module } = require('vm');
 const { createSecureServer } = require('http2');
 const path = require('path');
 const mimes = require('mime-types');
 const parse5 = require('parse5');
+
+mimes.types.js = 'text/javascript';
 
 const readSync = (p) => fs.readFileSync(require.resolve(p));
 
@@ -21,7 +25,7 @@ for (const file of files) {
     contentType: mimes.contentType(path.extname(file)),
     deps: [],
   };
-  if (c.contentType.includes('application/javascript')) {
+  if (c.contentType.includes('text/javascript')) {
     c.deps.push(...new Module(c.source).dependencySpecifiers);
   } else if (c.contentType.includes('text/html')) {
     const ast = parse5.parseFragment(c.source);
